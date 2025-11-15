@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        WEBEX_ROOM_ID = "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vMDQ1Y2IyMjAtYzI2My0xMWYwLTliNWQtYjk4ZTdjN2Q4Njdk"
+        WEBEX_API_URL = "https://webexapis.com/v1/messages"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -27,6 +32,33 @@ pipeline {
             steps {
                 echo "Running pytest in venv with PYTHONPATH set..."
                 sh "PYTHONPATH=. ./venv/bin/pytest"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Sending SUCCESS notification to WebEx..."
+            withCredentials([string(credentialsId: 'WEBEX_BOT_TOKEN', variable: 'WEBEX_TOKEN')]) {
+                sh """
+                curl -X POST \
+                  -H "Authorization: Bearer ${WEBEX_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\\\"roomId\\\": \\\"${WEBEX_ROOM_ID}\\\", \\\"markdown\\\": \\\"✅ Build SUCCESS for job ${JOB_NAME} #${BUILD_NUMBER}\\\"}" \
+                  ${WEBEX_API_URL}
+                """
+            }
+        }
+        failure {
+            echo "Sending FAILURE notification to WebEx..."
+            withCredentials([string(credentialsId: 'WEBEX_BOT_TOKEN', variable: 'WEBEX_TOKEN')]) {
+                sh """
+                curl -X POST \
+                  -H "Authorization: Bearer ${WEBEX_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  -d "{\\\"roomId\\\": \\\"${WEBEX_ROOM_ID}\\\", \\\"markdown\\\": \\\"❌ Build FAILED for job ${JOB_NAME} #${BUILD_NUMBER}\\\"}" \
+                  ${WEBEX_API_URL}
+                """
             }
         }
     }
