@@ -4,6 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                echo "Checking out source code from Git..."
                 checkout scm
             }
         }
@@ -24,8 +25,8 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo "Running pytest in venv..."
-                sh "./venv/bin/pytest"
+                echo "Running pytest in venv with PYTHONPATH set..."
+                sh "PYTHONPATH=. ./venv/bin/pytest"
             }
         }
     }
