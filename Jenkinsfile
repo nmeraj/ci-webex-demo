@@ -8,16 +8,24 @@ pipeline {
             }
         }
 
+        stage('Create venv') {
+            steps {
+                echo "Creating Python virtual environment..."
+                sh "python -m venv venv"
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                sh "python -m pip install --upgrade pip"
-                sh "python -m pip install -r requirements.txt"
+                echo "Installing dependencies into venv..."
+                sh "./venv/bin/pip install -r requirements.txt"
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh "pytest"
+                echo "Running pytest in venv..."
+                sh "./venv/bin/pytest"
             }
         }
     }
