@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        WEBEX_ROOM_ID = "Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vMDQ1Y2IyMjAtYzI2My0xMWYwLTliNWQtYjk4ZTdjN2Q4Njdk"
+        PYTHON = 'python3'
     }
 
     stages {
@@ -16,7 +16,7 @@ pipeline {
         stage('Create venv') {
             steps {
                 echo "Creating Python virtual environment..."
-                sh "python -m venv venv"
+                sh "${env.PYTHON} -m venv venv"
             }
         }
 
@@ -39,36 +39,41 @@ pipeline {
         success {
             echo "Sending SUCCESS notification to WebEx..."
             withCredentials([string(credentialsId: 'WEBEX_BOT_TOKEN', variable: 'WEBEX_TOKEN')]) {
-                sh """
-cat <<EOF > payload.json
-{"roomId": "${WEBEX_ROOM_ID}", "markdown": "✅ Build SUCCESS for job ${JOB_NAME} #${BUILD_NUMBER}"}
-EOF
+                sh '''
+                    cat <<EOF > payload.json
+                    {
+                      "roomId":"Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vMDQ1Y2IyMjAtYzI2My0xMWYwLTliNWQtYjk4ZTdjN2Q4Njdk",
+                      "markdown": "✅ Build SUCCESS from Jenkins!"
+                    }
+                    EOF
 
-curl -X POST \\
-  -H "Authorization: Bearer ${WEBEX_TOKEN}" \\
-  -H "Content-Type: application/json" \\
-  -d @payload.json \\
-  https://webexapis.com/v1/messages
-"""
+                    curl -X POST \
+                      -H "Authorization: Bearer ${WEBEX_TOKEN}" \
+                      -H "Content-Type: application/json" \
+                      -d @payload.json \
+                      https://webexapis.com/v1/messages
+                '''
             }
         }
 
         failure {
             echo "Sending FAILURE notification to WebEx..."
             withCredentials([string(credentialsId: 'WEBEX_BOT_TOKEN', variable: 'WEBEX_TOKEN')]) {
-                sh """
-cat <<EOF > payload.json
-{"roomId": "${WEBEX_ROOM_ID}", "markdown": "❌ Build FAILED for job ${JOB_NAME} #${BUILD_NUMBER}"}
-EOF
+                sh '''
+                    cat <<EOF > payload.json
+                    {
+                      "roomId":"Y2lzY29zcGFyazovL3VybjpURUFNOnVzLXdlc3QtMl9yL1JPT00vMDQ1Y2IyMjAtYzI2My0xMWYwLTliNWQtYjk4ZTdjN2Q4Njdk",
+                      "markdown": "❌ Build FAILED from Jenkins!"
+                    }
+                    EOF
 
-curl -X POST \\
-  -H "Authorization: Bearer ${WEBEX_TOKEN}" \\
-  -H "Content-Type: application/json" \\
-  -d @payload.json \\
-  https://webexapis.com/v1/messages
-"""
+                    curl -X POST \
+                      -H "Authorization: Bearer ${WEBEX_TOKEN}" \
+                      -H "Content-Type: application/json" \
+                      -d @payload.json \
+                      https://webexapis.com/v1/messages
+                '''
             }
         }
     }
 }
-
